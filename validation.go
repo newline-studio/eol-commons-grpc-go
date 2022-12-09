@@ -1,4 +1,4 @@
-package grpc_commons
+package commons
 
 import (
 	"sync"

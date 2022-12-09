@@ -1,4 +1,4 @@
-package grpc_commons
+package commons
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func Logger(logger *log.Logger) grpc.UnaryServerInterceptor {
+func MidlewareLogger(logger *log.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		start := time.Now()
 		data, err := handler(ctx, req)
@@ -24,7 +24,7 @@ func Logger(logger *log.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
-func Recover(logger *log.Logger) grpc.UnaryServerInterceptor {
+func MidlewareRecover(logger *log.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		defer func() {
 			if r := recover(); r != nil {
