@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func MidlewareLogger(logger *log.Logger, filteredServers ...any) grpc.UnaryServerInterceptor {
+func MiddlewareLogger(logger *log.Logger, filteredServers ...any) grpc.UnaryServerInterceptor {
 	filterLookup := make(map[any]struct{})
 	for _, srv := range filteredServers {
 		filterLookup[srv] = struct{}{}
@@ -32,7 +32,7 @@ func MidlewareLogger(logger *log.Logger, filteredServers ...any) grpc.UnaryServe
 	}
 }
 
-func MidlewareRecover(logger *log.Logger) grpc.UnaryServerInterceptor {
+func MiddlewareRecover(logger *log.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		defer func() {
 			if r := recover(); r != nil {
