@@ -11,8 +11,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func MidlewareLogger(logger *log.Logger) grpc.UnaryServerInterceptor {
+func MidlewareLogger(logger *log.Logger, filteredServers ...any) grpc.UnaryServerInterceptor {
+	filterLookup := make(map[any]struct{})
+	for _, srv := range filteredServers {
+		filterLookup[srv] = struct{}{}
+	}
+
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		if _, ok := filterLookup[info.Server]; ok {
+			return handler(ctx, req)
+		}
 		start := time.Now()
 		data, err := handler(ctx, req)
 		respStatus := status.New(codes.OK, "ok")
