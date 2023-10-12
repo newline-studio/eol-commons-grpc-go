@@ -30,7 +30,7 @@ func MiddlewareLogger(logger *slog.Logger, filteredServers ...any) grpc.UnarySer
 		logger.Info(
 			"handle rpc",
 			"method", info.FullMethod,
-			"code", respStatus.Code(),
+			"code", respStatus.Code().String(),
 			"duration", time.Since(start),
 		)
 		return data, err
