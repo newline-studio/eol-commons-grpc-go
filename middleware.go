@@ -2,7 +2,7 @@ package commons
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"runtime/debug"
 	"time"
 
@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func MiddlewareLogger(logger *log.Logger, filteredServers ...any) grpc.UnaryServerInterceptor {
+func MiddlewareLogger(logger *slog.Logger, filteredServers ...any) grpc.UnaryServerInterceptor {
 	filterLookup := make(map[any]struct{})
 	for _, srv := range filteredServers {
 		filterLookup[srv] = struct{}{}
@@ -27,17 +27,25 @@ func MiddlewareLogger(logger *log.Logger, filteredServers ...any) grpc.UnaryServ
 		if err != nil {
 			respStatus, _ = status.FromError(err)
 		}
-		logger.Printf("%s %v %s", info.FullMethod, respStatus.Code(), time.Since(start))
+		logger.Info(
+			"handle rpc",
+			"method", info.FullMethod,
+			"code", respStatus.Code(),
+			"duration", time.Since(start),
+		)
 		return data, err
 	}
 }
 
-func MiddlewareRecover(logger *log.Logger) grpc.UnaryServerInterceptor {
+func MiddlewareRecover(logger *slog.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		defer func() {
 			if r := recover(); r != nil {
-				logger.Println("recovered from panic", r)
-				logger.Println(string(debug.Stack()))
+				logger.Error(
+					"recovered from panic",
+					"error", r,
+					"stack", string(debug.Stack()),
+				)
 				err = status.Errorf(codes.Internal, "an unexpected error occurred")
 			}
 		}()
