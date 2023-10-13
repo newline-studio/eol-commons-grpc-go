@@ -4,9 +4,10 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"strings"
 )
 
-func GetStructuredLogger(minLevel slog.Level, out io.Writer) *slog.Logger {
+func GetStructuredLogger(minLevel slog.Level, out io.Writer, skipSource []string) *slog.Logger {
 	levelVar := new(slog.LevelVar)
 	levelVar.Set(slog.LevelDebug)
 	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
@@ -17,6 +18,13 @@ func GetStructuredLogger(minLevel slog.Level, out io.Writer) *slog.Logger {
 				a.Key = "severity"
 				if a.Value.String() == slog.LevelWarn.String() {
 					a.Value = slog.StringValue("WARNING")
+				}
+			}
+			if a.Key == slog.SourceKey {
+				for _, lookup := range skipSource {
+					if strings.Contains(a.Value.String(), lookup) {
+						return slog.Attr{}
+					}
 				}
 			}
 			return a
