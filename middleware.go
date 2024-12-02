@@ -11,13 +11,13 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func handleLogging(logger *slog.Logger, filteredServers ...any) func(srv any, handler func() error) error {
+func handleLogging(logger *slog.Logger, filteredServers ...any) func(srv any, method string, handler func() error) error {
 	filterLookup := make(map[any]struct{})
 	for _, srv := range filteredServers {
 		filterLookup[srv] = struct{}{}
 	}
 
-	return func(srv any, handler func() error) error {
+	return func(srv any, method string, handler func() error) error {
 		if _, ok := filterLookup[srv]; ok {
 			return handler()
 		}
@@ -29,7 +29,7 @@ func handleLogging(logger *slog.Logger, filteredServers ...any) func(srv any, ha
 		}
 		logger.Info(
 			"handle rpc",
-			"method", srv,
+			"method", method,
 			"code", respStatus.Code().String(),
 			"duration", time.Since(start).String(),
 		)
@@ -41,7 +41,7 @@ func UnaryMiddlewareLogger(logger *slog.Logger, filteredServers ...any) grpc.Una
 	loggingHandler := handleLogging(logger, filteredServers...)
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		var data any
-		err := loggingHandler(info.Server, func() error {
+		err := loggingHandler(info.Server, info.FullMethod, func() error {
 			handlerRes, err := handler(ctx, req)
 			data = handlerRes
 			if err != nil {
@@ -56,7 +56,7 @@ func UnaryMiddlewareLogger(logger *slog.Logger, filteredServers ...any) grpc.Una
 func StreamMiddlewareLogger(logger *slog.Logger, filteredServers ...any) grpc.StreamServerInterceptor {
 	loggingHandler := handleLogging(logger, filteredServers...)
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		return loggingHandler(srv, func() error {
+		return loggingHandler(srv, info.FullMethod, func() error {
 			return handler(srv, ss)
 		})
 	}
